@@ -1,0 +1,26 @@
+{
+    "switches": [
+        {
+            "name": "t",
+            "address": "192.168.1.10",
+            "model": "GS305EP",
+            "password": "${TEST_SWITCH_PASSWORD_1}",
+            "test_ports": [1, 2, 3],
+            "skip_tests": []
+        },
+        {
+            "name": "test-gs316ep",
+            "address": "192.168.1.11",
+            "model": "GS316EP",
+            "password": "${TEST_SWITCH_PASSWORD_2}",
+            "test_ports": [1, 2, 3, 4],
+            "skip_tests": ["rate_limiting"]
+        }
+    ],
+    "test_options": {
+        "cache_dir": "/tmp/netgear-test-cache",
+        "verbose": true,
+        "parallel": false,
+        "restore_on_failure": true
+    }
+}

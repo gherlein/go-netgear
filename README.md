@@ -45,6 +45,7 @@ import (
 
 func main() {
     // Create client with automatic environment password detection
+    // Tokens are cached in ~/.cache/go-netgear by default
     client, err := netgear.NewClient("192.168.1.10")
     if err != nil {
         log.Fatal(err)
@@ -70,6 +71,18 @@ func main() {
             status.PowerW, status.VoltageV)
     }
 }
+```
+
+### Token Cache Configuration
+
+```go
+// Use custom cache directory
+client, err := netgear.NewClient("192.168.1.10",
+    netgear.WithTokenCache("/var/lib/myapp/cache"))
+
+// Use in-memory cache only (no disk persistence)
+client, err := netgear.NewClient("192.168.1.10",
+    netgear.WithTokenManager(netgear.NewMemoryTokenManager()))
 ```
 
 ### Environment Variable Authentication

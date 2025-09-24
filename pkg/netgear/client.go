@@ -33,6 +33,27 @@ func WithTokenManager(tm TokenManager) ClientOption {
 	}
 }
 
+// WithTokenCache configures the token cache directory
+// If empty, defaults to XDG_CACHE_HOME/go-netgear or ~/.cache/go-netgear
+func WithTokenCache(cacheDir string) ClientOption {
+	return func(c *Client) {
+		c.tokenMgr = NewFileTokenManager(cacheDir)
+	}
+}
+
+// WithTokenCacheFile configures a specific file path for token caching
+// This allows full control over the cache file location
+func WithTokenCacheFile(filepath string) ClientOption {
+	return func(c *Client) {
+		// Extract directory from filepath
+		dir := ""
+		if filepath != "" {
+			dir = filepath
+		}
+		c.tokenMgr = NewFileTokenManager(dir)
+	}
+}
+
 // WithTimeout sets the HTTP timeout
 func WithTimeout(timeout time.Duration) ClientOption {
 	return func(c *Client) {
@@ -78,7 +99,7 @@ func NewClient(address string, opts ...ClientOption) (*Client, error) {
 	client := &Client{
 		address:     address,
 		httpClient:  internal.NewHTTPClient(address, 10*time.Second, false),
-		tokenMgr:    NewMemoryTokenManager(),
+		tokenMgr:    NewFileTokenManager(""), // Default to file-based token manager with default cache dir
 		passwordMgr: NewEnvironmentPasswordManager(), // Default to environment password manager
 		detector:    internal.NewModelDetector(),
 		verbose:     false,
@@ -323,6 +344,11 @@ func (c *Client) GetModel() Model {
 // GetAddress returns the switch address
 func (c *Client) GetAddress() string {
 	return c.address
+}
+
+// GetTokenManager returns the token manager being used
+func (c *Client) GetTokenManager() TokenManager {
+	return c.tokenMgr
 }
 
 // POE returns the POE management interface

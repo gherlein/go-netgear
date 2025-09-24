@@ -77,15 +77,32 @@ func (m *MemoryTokenManager) DeleteToken(ctx context.Context, address string) er
 
 // FileTokenManager stores tokens in files (current behavior)
 type FileTokenManager struct {
-	dir string
+	cacheDir string
 }
 
 // NewFileTokenManager creates a new file-based token manager
-func NewFileTokenManager(dir string) *FileTokenManager {
-	if dir == "" {
-		dir = filepath.Join(os.TempDir(), ".config", "ntgrrc")
+// If cacheDir is empty, it defaults to XDG_CACHE_HOME or ~/.cache/go-netgear
+func NewFileTokenManager(cacheDir string) *FileTokenManager {
+	if cacheDir == "" {
+		cacheDir = getDefaultCacheDir()
 	}
-	return &FileTokenManager{dir: dir}
+	return &FileTokenManager{cacheDir: cacheDir}
+}
+
+// getDefaultCacheDir returns the appropriate cache directory following XDG Base Directory Specification
+func getDefaultCacheDir() string {
+	// Try XDG_CACHE_HOME first
+	if xdgCache := os.Getenv("XDG_CACHE_HOME"); xdgCache != "" {
+		return filepath.Join(xdgCache, "go-netgear")
+	}
+
+	// Fall back to ~/.cache/go-netgear
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, ".cache", "go-netgear")
+	}
+
+	// Last resort: use temp directory
+	return filepath.Join(os.TempDir(), "go-netgear")
 }
 
 // GetToken retrieves a stored token from file
@@ -124,14 +141,15 @@ func (m *FileTokenManager) GetToken(ctx context.Context, address string) (string
 
 // StoreToken saves a token to file
 func (m *FileTokenManager) StoreToken(ctx context.Context, address string, token string, model Model) error {
-	tokenDir := filepath.Join(m.dir, ".config", "ntgrrc")
-	if err := os.MkdirAll(tokenDir, 0755); err != nil {
-		return NewAuthError("failed to create token directory", err)
+	// Ensure cache directory exists
+	if err := os.MkdirAll(m.cacheDir, 0700); err != nil {
+		return NewAuthError("failed to create token cache directory", err)
 	}
 
 	tokenFile := m.getTokenFilename(address)
 	content := fmt.Sprintf("%s:%s", string(model), token)
 
+	// Write token with secure permissions (readable by owner only)
 	err := os.WriteFile(tokenFile, []byte(content), 0600)
 	if err != nil {
 		return NewAuthError("failed to write token file", err)
@@ -159,12 +177,36 @@ func (m *FileTokenManager) getTokenFilename(address string) string {
 	h.Write([]byte(address))
 	hash := h.Sum32()
 
-	tokenDir := m.dir
-	if tokenDir == "" {
-		tokenDir = os.TempDir()
+	return filepath.Join(m.cacheDir, fmt.Sprintf("netgear-token-%x.cache", hash))
+}
+
+// GetCacheDir returns the cache directory being used
+func (m *FileTokenManager) GetCacheDir() string {
+	return m.cacheDir
+}
+
+// ClearAllTokens removes all cached tokens in the cache directory
+func (m *FileTokenManager) ClearAllTokens() error {
+	// Find all token files
+	pattern := filepath.Join(m.cacheDir, "netgear-token-*.cache")
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+		return NewAuthError("failed to list token files", err)
 	}
 
-	return filepath.Join(tokenDir, ".config", "ntgrrc", fmt.Sprintf("token-%d", hash))
+	// Remove each token file
+	var lastErr error
+	for _, file := range files {
+		if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
+			lastErr = err
+		}
+	}
+
+	if lastErr != nil {
+		return NewAuthError("failed to remove some token files", lastErr)
+	}
+
+	return nil
 }
 
 // AuthenticationType represents the type of authentication used
