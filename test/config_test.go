@@ -40,8 +40,8 @@ func TestLoadTestConfig(t *testing.T) {
 	if config.TestOptions.CacheDir != "/tmp/netgear-test-cache" {
 		t.Errorf("Expected cache dir '/tmp/netgear-test-cache', got %s", config.TestOptions.CacheDir)
 	}
-	if !config.TestOptions.Verbose {
-		t.Error("Expected verbose to be true")
+	if config.TestOptions.Verbose {
+		t.Error("Expected verbose to be false")
 	}
 	if !config.TestOptions.RestoreOnFailure {
 		t.Error("Expected restore_on_failure to be true")

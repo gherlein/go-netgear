@@ -10,7 +10,7 @@ import (
 func TestNewTestHelper(t *testing.T) {
 	config := &TestConfig{
 		TestOptions: TestOptions{
-			Verbose: true,
+			Verbose: false,
 			CacheDir: "/tmp/test",
 		},
 	}
@@ -19,8 +19,8 @@ func TestNewTestHelper(t *testing.T) {
 	if helper == nil {
 		t.Fatal("Expected non-nil helper")
 	}
-	if !helper.verbose {
-		t.Error("Expected verbose to be true")
+	if helper.verbose {
+		t.Error("Expected verbose to be false")
 	}
 	if helper.config != config {
 		t.Error("Expected config to be set correctly")
