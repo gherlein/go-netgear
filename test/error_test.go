@@ -11,6 +11,10 @@ import (
 
 // TestInvalidPortNumbers implements Test 6.3: Invalid Port Numbers
 func TestInvalidPortNumbers(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryBasic)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -95,6 +99,10 @@ func TestInvalidPortNumbers(t *testing.T) {
 
 // TestInvalidConfigurationValues implements Test 6.4: Invalid Configuration Values
 func TestInvalidConfigurationValues(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryBasic)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -281,6 +289,10 @@ func TestNetworkTimeout(t *testing.T) {
 
 // TestConcurrentOperations tests that the client can handle multiple operations safely
 func TestConcurrentOperations(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryBasic)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)

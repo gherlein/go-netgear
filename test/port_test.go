@@ -11,6 +11,10 @@ import (
 
 // TestPortSpeedSettings implements Test 4.1: Port Speed Settings
 func TestPortSpeedSettings(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -118,6 +122,10 @@ func TestPortSpeedSettings(t *testing.T) {
 
 // TestPortFlowControl implements Test 4.2: Port Flow Control
 func TestPortFlowControl(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -227,6 +235,10 @@ func TestPortFlowControl(t *testing.T) {
 
 // TestPortNaming implements Test 4.3: Port Naming
 func TestPortNaming(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -326,6 +338,10 @@ func TestPortNaming(t *testing.T) {
 
 // TestPortRateLimiting implements Test 4.4: Port Rate Limiting
 func TestPortRateLimiting(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -433,6 +449,10 @@ func TestPortRateLimiting(t *testing.T) {
 
 // TestPortNetworkEnableDisable implements Test 4.5: Port Enable/Disable (Network)
 func TestPortNetworkEnableDisable(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)

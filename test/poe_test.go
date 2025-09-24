@@ -11,6 +11,10 @@ import (
 
 // TestPOEEnableDisable implements Test 3.1: POE Enable/Disable
 func TestPOEEnableDisable(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -132,6 +136,10 @@ func TestPOEEnableDisable(t *testing.T) {
 
 // TestPOEPowerModes implements Test 3.2: POE Power Modes
 func TestPOEPowerModes(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -225,6 +233,10 @@ func TestPOEPowerModes(t *testing.T) {
 
 // TestPOEPriorityLevels implements Test 3.3: POE Priority Levels
 func TestPOEPriorityLevels(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -316,6 +328,10 @@ func TestPOEPriorityLevels(t *testing.T) {
 
 // TestPOEPowerLimits implements Test 3.4: POE Power Limits
 func TestPOEPowerLimits(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -439,6 +455,10 @@ func TestPOEPowerLimits(t *testing.T) {
 
 // TestPOEPowerCycling implements Test 3.5: POE Power Cycling
 func TestPOEPowerCycling(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -522,6 +542,10 @@ func TestPOEPowerCycling(t *testing.T) {
 
 // TestPOEDetectionTypes implements Test 3.6: POE Detection Types
 func TestPOEDetectionTypes(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryModify)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)

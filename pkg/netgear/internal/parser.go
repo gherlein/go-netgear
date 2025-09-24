@@ -53,8 +53,8 @@ func (p *POEDataParser) ParsePOEStatus(content string) ([]map[string]interface{}
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
 	
-	// Parse GS30x series format (li.poePortStatusListItem)
-	doc.Find("li.poePortStatusListItem").Each(func(i int, s *goquery.Selection) {
+	// Parse GS30x series format (li.poePortStatusListItem or li.poe_port_list_item)
+	doc.Find("li.poePortStatusListItem, li.poe_port_list_item").Each(func(i int, s *goquery.Selection) {
 		portData := make(map[string]interface{})
 		
 		// Extract port ID from hidden input

@@ -11,6 +11,10 @@ import (
 
 // TestPOEStatusReading implements Test 5.1: POE Status Reading
 func TestPOEStatusReading(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryBasic)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -119,6 +123,10 @@ func TestPOEStatusReading(t *testing.T) {
 
 // TestPortStatusReading implements Test 5.2: Port Status Reading
 func TestPortStatusReading(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryBasic)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
@@ -245,6 +253,10 @@ func TestPortStatusReading(t *testing.T) {
 
 // TestModelDetection implements Test 5.3: Model Detection
 func TestModelDetection(t *testing.T) {
+	// Require authentication - fail loudly if not available
+	env := DetectTestEnvironment(t)
+	env.RequireAuth(t, CategoryBasic)
+
 	config, err := LoadTestConfig("test_config.json")
 	if err != nil {
 		t.Fatalf("Failed to load config file: %v", err)
