@@ -443,14 +443,15 @@ func (c *Client) encryptPassword(password, seedValue string) string {
 
 // extractSessionToken extracts the session token from HTTP response headers
 func (c *Client) extractSessionToken(resp *http.Response) string {
+	// Check both Get() (single header) and direct header access (multiple headers)
 	cookie := resp.Header.Get("Set-Cookie")
-	sessionIdPrefixes := []string{
-		"SID=", // GS305EPx, GS308EPx
-	}
-	
-	for _, prefix := range sessionIdPrefixes {
-		if strings.HasPrefix(cookie, prefix) {
-			sidVal := cookie[len(prefix):]
+	allCookies := resp.Header["Set-Cookie"]
+
+	// First try the single header approach
+	if cookie != "" {
+		if sidIndex := strings.Index(cookie, "SID="); sidIndex != -1 {
+			sidStart := sidIndex + 4 // len("SID=")
+			sidVal := cookie[sidStart:]
 			// Split on semicolon to get just the token value
 			if idx := strings.Index(sidVal, ";"); idx != -1 {
 				return sidVal[:idx]
@@ -458,6 +459,19 @@ func (c *Client) extractSessionToken(resp *http.Response) string {
 			return sidVal
 		}
 	}
-	
+
+	// Try all Set-Cookie headers if single didn't work
+	for _, cookieHeader := range allCookies {
+		if sidIndex := strings.Index(cookieHeader, "SID="); sidIndex != -1 {
+			sidStart := sidIndex + 4 // len("SID=")
+			sidVal := cookieHeader[sidStart:]
+			// Split on semicolon to get just the token value
+			if idx := strings.Index(sidVal, ";"); idx != -1 {
+				return sidVal[:idx]
+			}
+			return sidVal
+		}
+	}
+
 	return ""
 }

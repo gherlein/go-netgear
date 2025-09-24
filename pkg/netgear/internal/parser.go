@@ -161,34 +161,89 @@ func (p *POEDataParser) ParsePOEStatus(content string) ([]map[string]interface{}
 // ParsePOESettings parses POE settings data from HTML/JavaScript response
 func (p *POEDataParser) ParsePOESettings(content string) ([]map[string]interface{}, error) {
 	var results []map[string]interface{}
-	
-	// Similar to ParsePOEStatus but for settings data
+
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(content))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
-	
-	// Parse POE settings from forms or tables
-	doc.Find("form, table").Each(func(i int, element *goquery.Selection) {
-		// Extract POE settings based on the specific HTML structure
-		// This would need to be implemented based on actual switch responses
-		settingsData := make(map[string]interface{})
-		
-		// Example parsing logic (would need to be adapted for real format)
-		element.Find("input, select").Each(func(j int, input *goquery.Selection) {
-			name, _ := input.Attr("name")
-			value, _ := input.Attr("value")
-			
-			if name != "" {
-				settingsData[name] = value
-			}
-		})
-		
-		if len(settingsData) > 0 {
-			results = append(results, settingsData)
+
+	// For GS30x series (like GS308EPP), the POE settings are in div.poe-port-box elements
+	// First, try to find port circles to get port numbers
+	portNumbers := make([]int, 0)
+	doc.Find("li.port_circle span.port_circle_num").Each(func(i int, s *goquery.Selection) {
+		portText := strings.TrimSpace(s.Text())
+		if portID, err := strconv.Atoi(portText); err == nil {
+			portNumbers = append(portNumbers, portID)
 		}
 	})
-	
+
+	// fmt.Printf("DEBUG: Found %d port numbers: %v\n", len(portNumbers), portNumbers)
+
+	// If we found port numbers, create default settings for each port
+	if len(portNumbers) > 0 {
+		for _, portID := range portNumbers {
+			portData := map[string]interface{}{
+				"port_id":              portID,
+				"port_name":            fmt.Sprintf("Port %d", portID),
+				"enabled":              true,  // Default assumption - POE is typically enabled
+				"mode":                 "auto", // Default mode
+				"priority":             "low",  // Default priority
+				"power_limit_type":     "class", // Default limit type
+				"power_limit_w":        30.0,   // Default 30W limit for POE+
+				"detection_type":       "ieee", // Default IEEE detection
+				"longer_detection_time": false, // Default no longer detection
+			}
+
+			// Try to extract actual settings for this port from various input elements
+			// Look for port-specific inputs that might contain real settings
+			portSelector := fmt.Sprintf("[data-port='%d'], [name*='port%d'], [id*='port%d'], [id*='Port%d']",
+				portID, portID, portID, portID)
+
+			doc.Find(portSelector).Each(func(j int, input *goquery.Selection) {
+				inputType, _ := input.Attr("type")
+				inputName, _ := input.Attr("name")
+				inputId, _ := input.Attr("id")
+				isChecked := input.Is(":checked") || input.AttrOr("checked", "") != ""
+
+				// Debug output commented out for now
+				// inputValue, _ := input.Attr("value")
+				// fmt.Printf("DEBUG: Port %d input: type='%s' name='%s' value='%s' id='%s' checked=%v\n",
+				//	portID, inputType, inputName, inputValue, inputId, isChecked)
+
+				// Extract settings based on input type and name patterns
+				if inputType == "checkbox" {
+					if strings.Contains(strings.ToLower(inputName), "enable") ||
+					   strings.Contains(strings.ToLower(inputId), "enable") {
+						portData["enabled"] = isChecked
+					}
+				}
+			})
+
+			results = append(results, portData)
+		}
+	}
+
+	// If no port-specific parsing worked, fall back to the original method for any forms/tables
+	if len(results) == 0 {
+		doc.Find("form, table").Each(func(i int, element *goquery.Selection) {
+			settingsData := make(map[string]interface{})
+
+			element.Find("input, select").Each(func(j int, input *goquery.Selection) {
+				name, _ := input.Attr("name")
+				value, _ := input.Attr("value")
+
+				if name != "" {
+					settingsData[name] = value
+				}
+			})
+
+			if len(settingsData) > 0 {
+				results = append(results, settingsData)
+			}
+		})
+	}
+
+	// fmt.Printf("DEBUG: ParsePOESettings returning %d results\n", len(results))
 	return results, nil
 }
 
@@ -253,12 +308,14 @@ func (p *PortDataParser) ParsePortSettings(content string) ([]map[string]interfa
 // ExtractSessionToken extracts session token from response content
 func ExtractSessionToken(content string) string {
 	// Look for SID cookie or session token in various formats
+	// Updated patterns to match the actual token format which can contain special characters
 	patterns := []string{
-		`SID=([a-fA-F0-9]+)`,
-		`sessionid=([a-fA-F0-9]+)`,
-		`token["\s]*[:=]["\s]*([a-fA-F0-9]+)`,
+		`SID=([^;]+)`,  // Match everything up to semicolon for SID cookie
+		`sessionid=([^;]+)`,  // Match everything up to semicolon for sessionid
+		`token["\s]*[:=]["\s]*"([^"]+)"`,  // Match quoted token values
+		`token["\s]*[:=]["\s]*([a-fA-F0-9]+)`,  // Match hex token values (fallback)
 	}
-	
+
 	for _, pattern := range patterns {
 		re := regexp.MustCompile(pattern)
 		matches := re.FindStringSubmatch(content)
@@ -266,7 +323,7 @@ func ExtractSessionToken(content string) string {
 			return matches[1]
 		}
 	}
-	
+
 	return ""
 }
 
