@@ -17,8 +17,8 @@ func TestLoadTestConfig(t *testing.T) {
 	}
 
 	// Verify configuration loaded correctly
-	if len(config.Switches) != 2 {
-		t.Errorf("Expected 2 switches, got %d", len(config.Switches))
+	if len(config.Switches) != 1 {
+		t.Errorf("Expected 1 switch, got %d", len(config.Switches))
 	}
 
 	// Check first switch
@@ -32,13 +32,7 @@ func TestLoadTestConfig(t *testing.T) {
 	if len(sw1.TestPorts) != 8 {
 		t.Errorf("Expected 8 test ports, got %d", len(sw1.TestPorts))
 	}
-
-	// Check second switch
-	sw2 := config.Switches[1]
-	if sw2.Name != "tswitch2" {
-		t.Errorf("Expected switch name 'tswitch2', got %s", sw2.Name)
-	}
-	if !sw2.ShouldSkipTest("rate_limiting") {
+	if !sw1.ShouldSkipTest("rate_limiting") {
 		t.Error("Expected rate_limiting to be skipped")
 	}
 

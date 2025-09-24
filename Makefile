@@ -182,6 +182,11 @@ _generate-test-summary:
 			grep "^--- FAIL:" /tmp/go-netgear-test-results/output.log | sed 's/^--- FAIL: /   • /' || true; \
 			echo ""; \
 		fi; \
+		if [ "$$SKIPPED_TESTS" -gt 0 ]; then \
+			printf "\033[33m⏭️  Skipped Tests:\033[0m\n"; \
+			grep "^--- SKIP:" /tmp/go-netgear-test-results/output.log | sed 's/^--- SKIP: /   • /' || true; \
+			echo ""; \
+		fi; \
 		if [ "$$FAILED_TESTS" -eq 0 ] && [ "$$PASSED_TESTS" -gt 0 ]; then \
 			printf "\033[32m🎉 All tests passed successfully!\033[0m\n"; \
 		elif [ "$$PASSED_TESTS" -eq 0 ] && [ "$$SKIPPED_TESTS" -gt 0 ]; then \

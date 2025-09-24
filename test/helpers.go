@@ -102,15 +102,28 @@ func (sam *SharedAuthManager) AuthenticateAndCacheAll() error {
 			continue
 		}
 
-		// Perform authentication
+		// Perform authentication with retry logic for timing issues
 		ctx := context.Background()
-		if err := client.Login(ctx, switchConfig.Password); err != nil {
-			authErrors = append(authErrors, fmt.Sprintf("Switch %s: Authentication failed - %v", switchConfig.Name, err))
-			continue
+		var loginErr error
+		authenticated := false
+
+		for attempt := 1; attempt <= 3; attempt++ {
+			if attempt > 1 {
+				if sam.verbose {
+					log.Printf("Retry attempt %d for switch %s", attempt, switchConfig.Name)
+				}
+				time.Sleep(time.Duration(attempt) * time.Second) // Progressive delay
+			}
+
+			loginErr = client.Login(ctx, switchConfig.Password)
+			if loginErr == nil && client.IsAuthenticated() {
+				authenticated = true
+				break
+			}
 		}
 
-		if !client.IsAuthenticated() {
-			authErrors = append(authErrors, fmt.Sprintf("Switch %s: Client not authenticated after login", switchConfig.Name))
+		if !authenticated {
+			authErrors = append(authErrors, fmt.Sprintf("Switch %s: Authentication failed after %d attempts - %v", switchConfig.Name, 3, loginErr))
 			continue
 		}
 
