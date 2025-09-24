@@ -177,10 +177,38 @@ func (m *POEManager) UpdatePort(ctx context.Context, updates ...POEPortUpdate) e
 		return NewOperationError("POE updates not supported for this model", nil)
 	}
 
+	// First, make a request to get the current page and extract the security hash
+	response, err := m.client.makeAuthenticatedRequest(ctx, "GET", endpoint, nil)
+	if err != nil {
+		return NewOperationError("failed to get POE settings page for security hash", err)
+	}
+
+	// Parse the response to extract the security hash
+	rawData, err := m.parser.ParsePOESettings(response)
+	if err != nil {
+		return NewOperationError("failed to parse POE settings for security hash", err)
+	}
+
+	// Extract security hash from the raw data
+	var securityHash string
+	for _, raw := range rawData {
+		if hash, ok := raw["security_hash"].(string); ok && hash != "" {
+			securityHash = hash
+			break
+		}
+	}
+
+	if securityHash == "" {
+		return NewOperationError("security hash not found - cannot update POE settings", nil)
+	}
+
 	// Prepare form data for each update
 	for _, update := range updates {
 		data := url.Values{}
-		
+
+		// Add security hash first
+		data.Set("hash", securityHash)
+
 		// Add port identification
 		data.Set("port", strconv.Itoa(update.PortID))
 		

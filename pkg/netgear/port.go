@@ -29,20 +29,19 @@ func (m *PortManager) GetSettings(ctx context.Context) ([]PortSettings, error) {
 		return nil, ErrNotAuthenticated
 	}
 
-	// Determine the appropriate endpoint based on model
-	var endpoint string
-	if m.client.model.IsModel30x() {
-		endpoint = "/PortStatistics.cgi"
-	} else if m.client.model.IsModel316() {
-		endpoint = "/iss/specific/interface.html"
-	} else {
-		return nil, NewOperationError("port settings not supported for this model", nil)
+	// Check if port settings is supported for this model
+	if err := m.client.endpoints.ValidateEndpoint(EndpointPortSettings); err != nil {
+		return nil, err
 	}
 
-	// Make authenticated request
-	response, err := m.client.makeAuthenticatedRequest(ctx, "GET", endpoint, nil)
+	// Get the endpoint from registry
+	endpointInfo := m.client.endpoints.GetEndpoint(EndpointPortSettings)
+	endpoint := endpointInfo.URL
+
+	// Make authenticated request with graceful 404 handling
+	response, err := m.client.makeAuthenticatedRequestWithFallback(ctx, "GET", endpoint, nil, EndpointPortSettings)
 	if err != nil {
-		return nil, NewOperationError("failed to get port settings", err)
+		return nil, err // Error already wrapped by makeAuthenticatedRequestWithFallback
 	}
 
 	// Parse the response
@@ -97,15 +96,14 @@ func (m *PortManager) UpdatePort(ctx context.Context, updates ...PortUpdate) err
 		return NewOperationError("no updates provided", nil)
 	}
 
-	// Determine the appropriate endpoint based on model
-	var endpoint string
-	if m.client.model.IsModel30x() {
-		endpoint = "/PortConfig.cgi"
-	} else if m.client.model.IsModel316() {
-		endpoint = "/iss/specific/interface.html"
-	} else {
-		return NewOperationError("port updates not supported for this model", nil)
+	// Check if port updates is supported for this model
+	if err := m.client.endpoints.ValidateEndpoint(EndpointPortUpdate); err != nil {
+		return err
 	}
+
+	// Get the endpoint from registry
+	endpointInfo := m.client.endpoints.GetEndpoint(EndpointPortUpdate)
+	endpoint := endpointInfo.URL
 
 	// Apply each update
 	for _, update := range updates {
@@ -139,10 +137,10 @@ func (m *PortManager) UpdatePort(ctx context.Context, updates ...PortUpdate) err
 			}
 		}
 
-		// Make the update request
-		response, err := m.client.makeAuthenticatedRequest(ctx, "POST", endpoint, data)
+		// Make the update request with graceful 404 handling
+		response, err := m.client.makeAuthenticatedRequestWithFallback(ctx, "POST", endpoint, data, EndpointPortUpdate)
 		if err != nil {
-			return NewOperationError(fmt.Sprintf("failed to update port %d", update.PortID), err)
+			return err // Error already wrapped by makeAuthenticatedRequestWithFallback
 		}
 
 		// Check for errors in response

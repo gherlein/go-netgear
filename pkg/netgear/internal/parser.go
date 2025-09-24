@@ -177,7 +177,21 @@ func (p *POEDataParser) ParsePOESettings(content string) ([]map[string]interface
 		}
 	})
 
-	// fmt.Printf("DEBUG: Found %d port numbers: %v\n", len(portNumbers), portNumbers)
+	// Look for security hash token
+	var securityHash string
+	doc.Find("input[name='hash'], input[id='hash']").Each(func(i int, s *goquery.Selection) {
+		if value, exists := s.Attr("value"); exists && value != "" {
+			securityHash = value
+		}
+	})
+
+	// Store the security hash in the results if found
+	securityHashData := map[string]interface{}{
+		"security_hash": securityHash,
+	}
+	if securityHash != "" {
+		results = append(results, securityHashData)
+	}
 
 	// If we found port numbers, create default settings for each port
 	if len(portNumbers) > 0 {

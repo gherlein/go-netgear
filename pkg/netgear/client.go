@@ -20,6 +20,7 @@ type Client struct {
 	tokenMgr    TokenManager
 	passwordMgr PasswordManager
 	detector    *internal.ModelDetector
+	endpoints   *EndpointRegistry
 	verbose     bool
 }
 
@@ -116,6 +117,7 @@ func NewClient(address string, opts ...ClientOption) (*Client, error) {
 	if err == nil {
 		client.token = token
 		client.model = model
+		client.endpoints = NewEndpointRegistry(model)
 		if client.verbose {
 			fmt.Printf("Loaded existing token for model %s\n", model)
 		}
@@ -131,6 +133,7 @@ func NewClient(address string, opts ...ClientOption) (*Client, error) {
 				return nil, NewModelError("failed to detect switch model", err)
 			}
 			client.model = model
+			client.endpoints = NewEndpointRegistry(model)
 			if client.verbose {
 				fmt.Printf("Detected model: %s\n", model)
 			}
@@ -154,6 +157,7 @@ func NewClient(address string, opts ...ClientOption) (*Client, error) {
 		return nil, NewModelError("failed to detect switch model", err)
 	}
 	client.model = model
+	client.endpoints = NewEndpointRegistry(model)
 	if client.verbose {
 		fmt.Printf("Detected model: %s (no auto-authentication - call Login() explicitly)\n", model)
 	}
@@ -474,4 +478,26 @@ func (c *Client) extractSessionToken(resp *http.Response) string {
 	}
 
 	return ""
+}
+
+// makeAuthenticatedRequestWithFallback makes an authenticated request with graceful 404 handling
+func (c *Client) makeAuthenticatedRequestWithFallback(ctx context.Context, method, endpoint string, data url.Values, endpointType EndpointType) (string, error) {
+	// First try the primary endpoint
+	response, err := c.makeAuthenticatedRequest(ctx, method, endpoint, data)
+
+	// If we get a 404 and this endpoint is known to be unsupported for this model, return a helpful error
+	if err != nil && strings.Contains(err.Error(), "404") {
+		if !c.endpoints.IsEndpointSupported(endpointType) {
+			return "", NewOperationError(
+				fmt.Sprintf("%s operation not supported on %s model (endpoint %s not available)",
+					string(endpointType), string(c.model), endpoint),
+				err)
+		}
+		// If the endpoint should be supported but returns 404, it's still an error
+		return "", NewOperationError(
+			fmt.Sprintf("endpoint %s returned 404 - this may indicate a model detection issue or firmware differences", endpoint),
+			err)
+	}
+
+	return response, err
 }

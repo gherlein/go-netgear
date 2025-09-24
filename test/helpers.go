@@ -250,20 +250,35 @@ func (h *TestHelper) CreateClient(switchName string) (*netgear.Client, error) {
 	return client, nil
 }
 
-// AuthenticateClient performs authentication for a test switch
+// AuthenticateClient performs authentication for a test switch with retry logic
 func (h *TestHelper) AuthenticateClient(client *netgear.Client, switchName string) error {
 	switchConfig, err := h.config.GetSwitchByName(switchName)
 	if err != nil {
 		return err
 	}
 
+	// Perform authentication with retry logic for timing issues
 	ctx := context.Background()
-	if err := client.Login(ctx, switchConfig.Password); err != nil {
-		return fmt.Errorf("authentication failed for switch %s: %w", switchName, err)
+	var loginErr error
+	authenticated := false
+
+	for attempt := 1; attempt <= 3; attempt++ {
+		if attempt > 1 {
+			if h.verbose {
+				log.Printf("Retry attempt %d for switch %s", attempt, switchName)
+			}
+			time.Sleep(time.Duration(attempt) * time.Second) // Progressive delay
+		}
+
+		loginErr = client.Login(ctx, switchConfig.Password)
+		if loginErr == nil && client.IsAuthenticated() {
+			authenticated = true
+			break
+		}
 	}
 
-	if !client.IsAuthenticated() {
-		return fmt.Errorf("client is not authenticated after login for switch %s", switchName)
+	if !authenticated {
+		return fmt.Errorf("authentication failed for switch %s after 3 attempts: %w", switchName, loginErr)
 	}
 
 	if h.verbose {
