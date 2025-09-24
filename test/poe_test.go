@@ -139,7 +139,7 @@ func TestPOEEnableDisable(t *testing.T) {
 						if result.Error != nil &&
 						   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 						    strings.Contains(result.Error.Error(), "authentication failed")) {
-							t.Skipf("Authentication issue - skipping POE test: %v", result.Error)
+							t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 						} else {
 							t.Errorf("Test failed: %v", result.Error)
 						}
@@ -241,7 +241,7 @@ func TestPOEPowerModes(t *testing.T) {
 								if result.Error != nil &&
 								   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 								    strings.Contains(result.Error.Error(), "authentication failed")) {
-									t.Skipf("Authentication issue - skipping POE test: %v", result.Error)
+									t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 								} else {
 									t.Errorf("Test failed: %v", result.Error)
 								}
@@ -343,7 +343,7 @@ func TestPOEPriorityLevels(t *testing.T) {
 								if result.Error != nil &&
 								   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 								    strings.Contains(result.Error.Error(), "authentication failed")) {
-									t.Skipf("Authentication issue - skipping POE test: %v", result.Error)
+									t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 								} else {
 									t.Errorf("Test failed: %v", result.Error)
 								}
@@ -477,7 +477,7 @@ func TestPOEPowerLimits(t *testing.T) {
 								if result.Error != nil &&
 								   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 								    strings.Contains(result.Error.Error(), "authentication failed")) {
-									t.Skipf("Authentication issue - skipping POE test: %v", result.Error)
+									t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 								} else {
 									t.Errorf("Test failed: %v", result.Error)
 								}
@@ -648,7 +648,7 @@ func TestPOEDetectionTypes(t *testing.T) {
 								if result.Error != nil &&
 								   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 								    strings.Contains(result.Error.Error(), "authentication failed")) {
-									t.Skipf("Authentication issue - skipping POE test: %v", result.Error)
+									t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 								} else {
 									t.Errorf("Test failed: %v", result.Error)
 								}

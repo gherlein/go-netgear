@@ -115,7 +115,7 @@ func TestPortSpeedSettings(t *testing.T) {
 								if result.Error != nil &&
 								   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 								    strings.Contains(result.Error.Error(), "authentication failed")) {
-									t.Skipf("Authentication issue - skipping port test: %v", result.Error)
+									t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 								} else {
 									t.Errorf("Test failed: %v", result.Error)
 								}
@@ -237,7 +237,7 @@ func TestPortFlowControl(t *testing.T) {
 						if result.Error != nil &&
 						   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 						    strings.Contains(result.Error.Error(), "authentication failed")) {
-							t.Skipf("Authentication issue - skipping port test: %v", result.Error)
+							t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 						} else {
 							t.Errorf("Test failed: %v", result.Error)
 						}
@@ -347,7 +347,7 @@ func TestPortNaming(t *testing.T) {
 						if result.Error != nil &&
 						   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 						    strings.Contains(result.Error.Error(), "authentication failed")) {
-							t.Skipf("Authentication issue - skipping port test: %v", result.Error)
+							t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 						} else {
 							t.Errorf("Test failed: %v", result.Error)
 						}
@@ -465,7 +465,7 @@ func TestPortRateLimiting(t *testing.T) {
 						if result.Error != nil &&
 						   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 						    strings.Contains(result.Error.Error(), "authentication failed")) {
-							t.Skipf("Authentication issue - skipping port test: %v", result.Error)
+							t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 						} else {
 							t.Errorf("Test failed: %v", result.Error)
 						}
@@ -562,7 +562,7 @@ func TestPortNetworkEnableDisable(t *testing.T) {
 						if result.Error != nil &&
 						   (strings.Contains(result.Error.Error(), "invalid credentials") ||
 						    strings.Contains(result.Error.Error(), "authentication failed")) {
-							t.Skipf("Authentication issue - skipping port test: %v", result.Error)
+							t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch %s after 3 attempts. This blocks all tests. Error: %v", switchConfig.Name, result.Error)
 						} else {
 							t.Errorf("Test failed: %v", result.Error)
 						}

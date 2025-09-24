@@ -33,7 +33,7 @@ func TestPOEStatusReading(t *testing.T) {
 				// Check if it's an authentication issue - skip instead of failing
 				if strings.Contains(err.Error(), "invalid credentials") ||
 				   strings.Contains(err.Error(), "authentication failed") {
-					t.Skipf("Authentication issue - skipping test: %v", err)
+					t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch after 3 attempts. This blocks all tests. Error: %v", err)
 				} else {
 					t.Fatalf("Failed to get authenticated client: %v", err)
 				}
@@ -152,7 +152,7 @@ func TestPortStatusReading(t *testing.T) {
 				// Check if it's an authentication issue - skip instead of failing
 				if strings.Contains(err.Error(), "invalid credentials") ||
 				   strings.Contains(err.Error(), "authentication failed") {
-					t.Skipf("Authentication issue - skipping test: %v", err)
+					t.Fatalf("❌ AUTHENTICATION FAILURE: Cannot authenticate to switch after 3 attempts. This blocks all tests. Error: %v", err)
 				} else {
 					t.Fatalf("Failed to get authenticated client: %v", err)
 				}
