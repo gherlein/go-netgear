@@ -2,6 +2,10 @@
 
 A Go library and CLI tool for controlling Netgear managed switches with Power over Ethernet (PoE) capabilities. This project provides both a programmatic API and command-line interface for managing switch ports, PoE settings, and monitoring power consumption.
 
+## Credits
+
+This project builds upon the excellent work of [ntgrrc](https://github.com/nitram509/ntgrrc) by Martin W. Kirst, which provided the foundation for understanding and implementing the Netgear switch API protocol. 
+
 ## Supported Models
 
 - **GS305EP** / **GS305EPP** - 5-port Gigabit switches with PoE+
