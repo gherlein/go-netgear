@@ -400,23 +400,36 @@ func (c *Client) makeAuthenticatedRequest(ctx context.Context, method, path stri
 		data.Set("Gambit", c.token)
 	}
 
+	var httpResp *http.Response
+	var err error
 	if method == "GET" {
 		if len(data) > 0 {
 			// Add query parameters for GET requests
 			path += "?" + data.Encode()
 		}
-		httpResp, err := c.httpClient.Get(ctx, path, headers)
+		httpResp, err = c.httpClient.Get(ctx, path, headers)
 		if err != nil {
 			return "", NewNetworkError("GET request failed", err)
 		}
-		return c.httpClient.ReadBody(httpResp)
 	} else {
-		httpResp, err := c.httpClient.Post(ctx, path, data, headers)
+		httpResp, err = c.httpClient.Post(ctx, path, data, headers)
 		if err != nil {
 			return "", NewNetworkError("POST request failed", err)
 		}
-		return c.httpClient.ReadBody(httpResp)
 	}
+
+	body, err := c.httpClient.ReadBody(httpResp)
+	if err != nil {
+		return "", err
+	}
+
+	// The switch answers a stale session with its login page, which carries the
+	// login seed; clearing the token lets the caller log in again and retry.
+	if internal.ExtractSeedValue(body) != "" {
+		c.token = ""
+		return "", ErrSessionExpired
+	}
+	return body, nil
 }
 
 // getSeedValue retrieves the random seed value from the login page
