@@ -23,6 +23,7 @@ type gs316Switch struct {
 	t            *testing.T
 	statusPage   string
 	settingsPage string
+	expiredPage  string
 	postReply    string
 
 	mu       sync.Mutex
@@ -42,6 +43,7 @@ func newGS316Switch(t *testing.T) *gs316Switch {
 		t:            t,
 		statusPage:   readFixture(t, "testdata/gs316epp/poePortStatus.html"),
 		settingsPage: readFixture(t, "testdata/gs316epp/poePortConf.html"),
+		expiredPage:  readFixture(t, "testdata/gs316epp/sessionExpired.html"),
 		postReply:    "SUCCESS",
 	}
 }
@@ -75,8 +77,10 @@ func (s *gs316Switch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.requests = append(s.requests, recordedRequest{method: r.Method, path: r.URL.Path, form: form, rawBody: string(rawBody)})
 	s.mu.Unlock()
 
+	// The firmware answers an unknown or expired token with a script
+	// redirect to the login page, not with the login page itself.
 	if form.Get("Gambit") != gs316TestToken {
-		fmt.Fprint(w, gs316LoginPage(""))
+		fmt.Fprint(w, s.expiredPage)
 		return
 	}
 	switch {
@@ -380,5 +384,45 @@ func TestGS316LogoutEndsSessionOnSwitch(t *testing.T) {
 	}
 	if _, _, err := tokens.GetToken(context.Background(), address); err == nil {
 		t.Fatal("token still cached")
+	}
+}
+
+// newExpiredGS316Client returns a client holding a token the switch no longer
+// accepts, as when a cached session has timed out.
+func newExpiredGS316Client(t *testing.T, fake *gs316Switch) *Client {
+	t.Helper()
+	server := httptest.NewServer(fake)
+	t.Cleanup(server.Close)
+	address := strings.TrimPrefix(server.URL, "http://")
+	tokens := NewMemoryTokenManager()
+	if err := tokens.StoreToken(context.Background(), address, "expiredtokenexpiredtokenexpiredtokenexpi", ModelGS316EPP); err != nil {
+		t.Fatal(err)
+	}
+	client, err := NewClient(address, WithTokenManager(tokens), WithEnvironmentAuth(false))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return client
+}
+
+func TestGS316ExpiredSessionOnReadReturnsSessionExpired(t *testing.T) {
+	client := newExpiredGS316Client(t, newGS316Switch(t))
+	_, err := client.POE().GetSettings(context.Background())
+	if !errors.Is(err, ErrSessionExpired) {
+		t.Fatalf("got %v, want ErrSessionExpired", err)
+	}
+	if client.IsAuthenticated() {
+		t.Fatal("expired token not cleared")
+	}
+}
+
+func TestGS316ExpiredSessionOnUpdateReturnsSessionExpired(t *testing.T) {
+	client := newExpiredGS316Client(t, newGS316Switch(t))
+	err := client.POE().DisablePort(context.Background(), 2)
+	if !errors.Is(err, ErrSessionExpired) {
+		t.Fatalf("got %v, want ErrSessionExpired", err)
+	}
+	if client.IsAuthenticated() {
+		t.Fatal("expired token not cleared")
 	}
 }
