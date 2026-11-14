@@ -57,6 +57,17 @@ func (h *HTTPClient) Post(ctx context.Context, path string, data url.Values, hea
 	return h.request(ctx, "POST", path, body, headers)
 }
 
+// PostEncodedForm posts an already-encoded form body. url.Values.Encode sorts
+// fields by name; firmware that reads fields by position needs the caller's
+// order kept.
+func (h *HTTPClient) PostEncodedForm(ctx context.Context, path string, encodedForm string, headers map[string]string) (*http.Response, error) {
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+	headers["Content-Type"] = "application/x-www-form-urlencoded"
+	return h.request(ctx, "POST", path, strings.NewReader(encodedForm), headers)
+}
+
 // request is the internal method for making HTTP requests
 func (h *HTTPClient) request(ctx context.Context, method, path string, body io.Reader, headers map[string]string) (*http.Response, error) {
 	fullURL := h.baseURL + path

@@ -343,6 +343,14 @@ func ExtractSessionToken(content string) string {
 
 // ExtractGambitToken extracts Gambit token from response
 func ExtractGambitToken(content string) string {
+	// GS316 firmware returns the token in a hidden form field that
+	// auto-submits to the home page; the token is not limited to hex digits.
+	if doc, err := goquery.NewDocumentFromReader(strings.NewReader(content)); err == nil {
+		if token, exists := doc.Find(`input[name="Gambit"]`).First().Attr("value"); exists && token != "" {
+			return token
+		}
+	}
+
 	// Look for Gambit token in JavaScript or HTML
 	patterns := []string{
 		`Gambit["\s]*[:=]["\s]*([a-fA-F0-9]+)`,

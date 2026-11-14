@@ -73,3 +73,53 @@ func TestGambitLoginWithoutMessageIsInvalidCredentials(t *testing.T) {
 		t.Fatalf("got %v, want ErrInvalidCredentials", err)
 	}
 }
+
+// gs316LoginSuccessPage mirrors the page a GS316EPP returns after a correct
+// password: the token sits in a hidden form field that auto-submits to the
+// home page.
+func gs316LoginSuccessPage(token string) string {
+	return fmt.Sprintf(`<html>
+<head>
+<script>
+function loadHomePage()
+{
+	sessionStorage.setItem("regFlag", "1");
+	document.forms[0].submit();
+}
+</script>
+</head>
+<body onload="loadHomePage()">
+<form method="post" action="/homepage.html">
+<input type="hidden" name="Gambit" value="%s">
+</form>
+</body>
+</html>`, token)
+}
+
+func TestGambitLoginReadsTokenFromHiddenInput(t *testing.T) {
+	const token = "qwertyuiopasdfghjklzxcvbnmqwertyuiopasdf"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			fmt.Fprint(w, gs316LoginSuccessPage(token))
+			return
+		}
+		fmt.Fprint(w, gs316LoginPage(""))
+	}))
+	defer server.Close()
+	address := strings.TrimPrefix(server.URL, "http://")
+	tokens := NewMemoryTokenManager()
+	client, err := NewClient(address, WithTokenManager(tokens), WithEnvironmentAuth(false))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Login(context.Background(), "password"); err != nil {
+		t.Fatalf("login: %v", err)
+	}
+	stored, _, err := tokens.GetToken(context.Background(), address)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stored != token {
+		t.Fatalf("stored token %q, want %q", stored, token)
+	}
+}
