@@ -469,8 +469,9 @@ func (c *Client) readAuthenticatedBody(httpResp *http.Response) (string, error) 
 	}
 
 	// The switch answers a stale session with its login page, which carries the
-	// login seed; clearing the token lets the caller log in again and retry.
-	if internal.ExtractSeedValue(body) != "" {
+	// login seed, or (GS316) with a script redirecting to that page. Clearing
+	// the token lets the caller log in again and retry.
+	if internal.ExtractSeedValue(body) != "" || internal.IsLoginRedirect(body) {
 		c.token = ""
 		return "", ErrSessionExpired
 	}

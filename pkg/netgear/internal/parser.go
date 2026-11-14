@@ -414,6 +414,25 @@ func ExtractSeedValue(content string) string {
 	return ""
 }
 
+// loginRedirectPattern matches the script GS316 firmware returns instead of a
+// page when the session token is unknown or has expired.
+var loginRedirectPattern = regexp.MustCompile(`top\.location\.href\s*=\s*["']/wmi/login["']`)
+
+// IsLoginRedirect reports whether content is the switch sending the browser
+// back to its login page, which means the session is no longer valid.
+func IsLoginRedirect(content string) bool {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(content))
+	if err != nil {
+		return false
+	}
+	redirect := false
+	doc.Find("script").EachWithBreak(func(_ int, script *goquery.Selection) bool {
+		redirect = loginRedirectPattern.MatchString(script.Text())
+		return !redirect
+	})
+	return redirect
+}
+
 // extractNumericValue extracts a numeric value from a string that may contain units
 func extractNumericValue(text string) float64 {
 	// Remove common units and non-numeric characters
