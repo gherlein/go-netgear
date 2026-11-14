@@ -2,6 +2,7 @@ package netgear
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -367,15 +368,24 @@ func (c *Client) Ports() *PortManager {
 
 // Logout clears the authentication token
 func (c *Client) Logout(ctx context.Context) error {
+	// A GS316 keeps each session until it times out and allows only a few, so
+	// end it on the switch rather than only forgetting the token.
+	var logoutErr error
+	if c.model.IsModel316() && c.IsAuthenticated() {
+		if _, err := c.makeAuthenticatedRequest(ctx, "GET", gs316LogoutPath, nil); err != nil && !errors.Is(err, ErrSessionExpired) {
+			logoutErr = NewNetworkError("failed to end the session on the switch", err)
+		}
+	}
+
 	c.token = ""
-	
+
 	// Remove stored token
 	err := c.tokenMgr.DeleteToken(ctx, c.address)
 	if err != nil && c.verbose {
 		fmt.Printf("Warning: failed to delete stored token: %v\n", err)
 	}
 	
-	return nil
+	return logoutErr
 }
 
 // makeAuthenticatedRequest makes an HTTP request with appropriate authentication
@@ -418,6 +428,41 @@ func (c *Client) makeAuthenticatedRequest(ctx context.Context, method, path stri
 		}
 	}
 
+	return c.readAuthenticatedBody(httpResp)
+}
+
+// formField is one name/value pair of a form whose field order must be kept.
+type formField struct {
+	name  string
+	value string
+}
+
+// postOrderedGambitForm posts fields to a Gambit-authenticated switch with the
+// token first and the rest in the given order. GS316 firmware reads its form
+// fields by position and silently ignores a request whose fields are sorted
+// by name, as url.Values.Encode does.
+func (c *Client) postOrderedGambitForm(ctx context.Context, path string, fields []formField) (string, error) {
+	if !c.IsAuthenticated() {
+		return "", ErrNotAuthenticated
+	}
+	if GetAuthenticationType(c.model) != AuthTypeGambit {
+		panic(fmt.Sprintf("postOrderedGambitForm used with model %s, which does not use Gambit authentication", c.model))
+	}
+
+	var encoded strings.Builder
+	encoded.WriteString("Gambit=" + url.QueryEscape(c.token))
+	for _, field := range fields {
+		encoded.WriteString("&" + url.QueryEscape(field.name) + "=" + url.QueryEscape(field.value))
+	}
+
+	httpResp, err := c.httpClient.PostEncodedForm(ctx, path, encoded.String(), nil)
+	if err != nil {
+		return "", NewNetworkError("POST request failed", err)
+	}
+	return c.readAuthenticatedBody(httpResp)
+}
+
+func (c *Client) readAuthenticatedBody(httpResp *http.Response) (string, error) {
 	body, err := c.httpClient.ReadBody(httpResp)
 	if err != nil {
 		return "", err

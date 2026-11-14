@@ -29,6 +29,10 @@ func (m *POEManager) GetStatus(ctx context.Context) ([]POEPortStatus, error) {
 		return nil, ErrNotAuthenticated
 	}
 
+	if m.client.model.IsModel316() {
+		return m.getStatusGS316(ctx)
+	}
+
 	// Determine the appropriate endpoint based on model
 	var endpoint string
 	if m.client.model.IsModel30x() {
@@ -94,6 +98,10 @@ func (m *POEManager) GetStatus(ctx context.Context) ([]POEPortStatus, error) {
 func (m *POEManager) GetSettings(ctx context.Context) ([]POEPortSettings, error) {
 	if !m.client.IsAuthenticated() {
 		return nil, ErrNotAuthenticated
+	}
+
+	if m.client.model.IsModel316() {
+		return m.getSettingsGS316(ctx)
 	}
 
 	// Determine the appropriate endpoint based on model
@@ -165,6 +173,10 @@ func (m *POEManager) UpdatePort(ctx context.Context, updates ...POEPortUpdate) e
 
 	if len(updates) == 0 {
 		return NewOperationError("no updates provided", nil)
+	}
+
+	if m.client.model.IsModel316() {
+		return m.updatePortsGS316(ctx, updates)
 	}
 
 	// Determine the appropriate endpoint based on model
@@ -264,6 +276,10 @@ func (m *POEManager) CyclePower(ctx context.Context, portIDs ...int) error {
 
 	if len(portIDs) == 0 {
 		return NewOperationError("no ports specified for power cycle", nil)
+	}
+
+	if m.client.model.IsModel316() {
+		return m.cyclePowerGS316(ctx, portIDs)
 	}
 
 	// Determine the appropriate endpoint based on model
