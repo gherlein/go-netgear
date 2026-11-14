@@ -363,6 +363,15 @@ func ExtractGambitToken(content string) string {
 
 // ExtractErrorMessage extracts error messages from response content
 func ExtractErrorMessage(content string) string {
+	// GS316 firmware answers a refused login with the login page again and puts
+	// the reason (for example "maximum number of sessions") in this span; it is
+	// empty on a plain login page.
+	if doc, err := goquery.NewDocumentFromReader(strings.NewReader(content)); err == nil {
+		if message := strings.TrimSpace(doc.Find("#loginPageErrorMsg").First().Text()); message != "" {
+			return message
+		}
+	}
+
 	// Look for common error patterns
 	patterns := []string{
 		`error["\s]*[:=]["\s]*"([^"]+)"`,
